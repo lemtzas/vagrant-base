@@ -1,0 +1,43 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# Setup required:
+################################################################################
+# vagrant plugin install vagrant-reload
+################################################################################
+
+# Verify environment
+################################################################################
+# *cobwebs*
+################################################################################
+
+# Configure vagrant
+################################################################################
+Vagrant.configure('2') do |config|
+  config.vm.box = 'ubuntu/trusty64'
+  config.vm.synced_folder '../project', '/home/vagrant/project'
+
+  # config.vm.network :forwarded_port, guest: 80, host: 8080
+  config.vm.network 'private_network', ip: '11.11.11.11'
+
+  config.vm.provider 'virtualbox' do |vb|
+    vb.memory = '1024'
+  end
+
+  config.vm.provision 'shell',
+                      path: 'bootstrap-root.sh',
+                      name: 'root'
+
+  config.vm.provision 'shell',
+                      path: 'bootstrap-user.sh',
+                      privileged: false,
+                      name: 'user'
+
+  config.vm.provision 'docker', run: 'always' do |d|
+    d.build_image '/home/vagrant/project', args: '-t project'
+    d.run 'project'
+  end
+
+  # vagrant plugin install vagrant-reload
+  config.vm.provision :reload
+end
